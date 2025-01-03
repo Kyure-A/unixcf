@@ -1,0 +1,15 @@
+[package]
+name = "native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.22.1"
+image = "0.25.5"
+xcf = "0.4.0"
+
+[build-dependencies]
+csbindgen = "1.9.3"
+
+[lib]
+crate-type = ["cdylib"]
