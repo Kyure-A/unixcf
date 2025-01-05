@@ -14,8 +14,8 @@ namespace UniXCF
     {
         public override void OnImportAsset(AssetImportContext ctx)
         {
-            var base64 = Native.bakeImage(this.assetPath);
-            var image = System.Convert.FromBase64String(base64);
+            var base64 = NativeMethods.bakeImage(this.assetPath);
+            var imageBytes = System.Convert.FromBase64String(base64);
 
             var texture = new Texture2D(2, 2);
             texture.LoadImage(imageBytes);
