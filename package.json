@@ -1,0 +1,14 @@
+{
+    "name": "moe.kyre.unixcf",
+    "displayName": "UniXCF",
+    "version": "1.0.1",
+    "author": {
+        "name": "Kyure_A"
+    },
+    "unity" : "2022.3",
+    "description" : "UniXCF is xcf importer for Unity. ",
+    "url" : "https://github.com/Kyure-A/unixcf/releases/tag/v1.0.1",
+    "legacyFolders" : {
+        "Assets\\unixcf" : "277d8902695758445a0424b60ff4a652"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "name": "moe.kyre.unixcf.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:dc1b5556228cfc342b08db9d8baacee5"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
