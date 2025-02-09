@@ -1,6 +1,9 @@
 use base64::{engine::general_purpose, Engine};
-use image::{ImageBuffer, Rgba};
+use std::io::Cursor;
+use image::{ImageBuffer, Rgba, ImageFormat, DynamicImage};
 use xcf::{PropertyIdentifier, PropertyPayload, Xcf};
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
 
 struct XcfPropOffsets {
     width: i32,
@@ -40,46 +43,54 @@ impl XcfProperty for xcf::Property {
 }
 
 #[no_mangle]
-pub extern "C" fn bakeImage(path: String) -> String {
-    let xcf = Xcf::open(path).unwrap();
+pub extern "C" fn bakeImage(path: *const c_char) -> *mut c_char {
+    let c_str = unsafe { CStr::from_ptr(path) };
+    let path_str = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return std::ptr::null_mut(),
+    };
+
+    let xcf = match Xcf::open(path_str) {
+        Ok(x) => x,
+        Err(_) => return std::ptr::null_mut(),
+    };
+
     let mut image = ImageBuffer::new(xcf.width(), xcf.height());
     
     for layer in xcf.layers.iter().rev() {
         let prop_offsets = layer.properties
             .iter()
             .find(|l| l.kind == PropertyIdentifier::PropOffsets)
-            .unwrap()
-            .get_prop_offsets();
+            .map(|prop| prop.get_prop_offsets())
+            .unwrap_or(XcfPropOffsets { width: 0, height: 0 });
 
-        let rgba_buf = &layer
-            .pixels
-            .pixels;
+        let rgba_buf = &layer.pixels.pixels;
 
-        for pixel in rgba_buf.iter().enumerate() {
-            let pixel_height = pixel.0 as i32 / layer.width as i32;
-            let pixel_width = pixel.0 as i32 - pixel_height * layer.width as i32;
-            
-            // pixel.0 は単純に index だから、1980, 21 の座標の pixel は 1980 + 100 - 1 で 2000 である
-            // そのため x 座標を出すには index - height をすべし
+        for (idx, pixel) in rgba_buf.iter().enumerate() {
+            let pixel_height = idx as i32 / layer.width as i32;
+            let pixel_width = idx as i32 - pixel_height * layer.width as i32;
 
             let offsetted_width = (pixel_width + prop_offsets.width) as u32;
             let offsetted_height = (pixel_height + prop_offsets.height) as u32;
-            
-            // 画像からはみでた layer 部分には書き込まない
-            // layer の透過部分はかきこまない
-            if pixel.1.a() == 0
-                || offsetted_width <= 0 || xcf.width() <= offsetted_width 
-                || offsetted_height <= 0 || xcf.height() <= offsetted_height {
+
+            if pixel.a() == 0
+                || offsetted_width >= xcf.width()
+                || offsetted_height >= xcf.height() {
                     continue;
                 }
-            
-            let rgba = Rgba([pixel.1.r(), pixel.1.g(), pixel.1.b(), pixel.1.a()]);
-            
+
+            let rgba = Rgba([pixel.r(), pixel.g(), pixel.b(), pixel.a()]);
             image.put_pixel(offsetted_width, offsetted_height, rgba);
         }
     }
-
-    let b64 = general_purpose::STANDARD.encode(image.into_vec());
-
-    return b64;
+    
+    let mut cursor = Cursor::new(Vec::new());
+    
+    let dyn_img = DynamicImage::ImageRgba8(image);
+    dyn_img.write_to(&mut cursor, ImageFormat::Png).unwrap();
+    
+    let buf = cursor.into_inner();
+    
+    let b64 = general_purpose::STANDARD.encode(buf);
+    CString::new(b64).unwrap().into_raw()
 }

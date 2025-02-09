@@ -17,7 +17,7 @@ namespace UniXCF
             var base64 = NativeMethods.bakeImage(this.assetPath);
             var imageBytes = System.Convert.FromBase64String(base64);
 
-            var texture = new Texture2D(2, 2);
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             texture.LoadImage(imageBytes);
 
             ctx.AddObjectToAsset("texture", texture);
